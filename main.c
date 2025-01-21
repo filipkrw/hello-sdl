@@ -5,8 +5,8 @@
 static SDL_Window *window = NULL;
 static SDL_Renderer *renderer = NULL;
 
-#define WINDOW_WIDTH 640
-#define WINDOW_HEIGHT 480
+static int window_width = 640;
+static int window_height = 480;
 
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
 {
@@ -18,7 +18,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
         return SDL_APP_FAILURE;
     }
 
-    if (!SDL_CreateWindowAndRenderer("examples/renderer/rectangles", WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_RESIZABLE, &window, &renderer))
+    if (!SDL_CreateWindowAndRenderer("examples/renderer/rectangles", window_width, window_height, SDL_WINDOW_RESIZABLE, &window, &renderer))
     {
         SDL_Log("Couldn't create window/renderer: %s", SDL_GetError());
         return SDL_APP_FAILURE;
@@ -32,6 +32,11 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event)
     if (event->type == SDL_EVENT_QUIT)
     {
         return SDL_APP_SUCCESS; /* end the program, reporting success to the OS. */
+    }
+    else if (event->type == SDL_EVENT_WINDOW_RESIZED)
+    {
+        window_width = event->window.data1;
+        window_height = event->window.data2;
     }
     return SDL_APP_CONTINUE; /* carry on with the program! */
 }
@@ -66,8 +71,8 @@ SDL_AppResult SDL_AppIterate(void *appstate)
     {
         const float size = (i + 1) * 50.0f;
         rects[i].w = rects[i].h = size + (size * scale);
-        rects[i].x = (WINDOW_WIDTH - rects[i].w) / 2;  /* center it. */
-        rects[i].y = (WINDOW_HEIGHT - rects[i].h) / 2; /* center it. */
+        rects[i].x = (window_width - rects[i].w) / 2;  /* center it. */
+        rects[i].y = (window_height - rects[i].h) / 2; /* center it. */
     }
     SDL_SetRenderDrawColor(renderer, 0, 255, 0, SDL_ALPHA_OPAQUE); /* green, full alpha */
     SDL_RenderRects(renderer, rects, 3);                           /* draw three rectangles at once */
@@ -83,15 +88,23 @@ SDL_AppResult SDL_AppIterate(void *appstate)
     /* ...and also fill a bunch of rectangles at once... */
     for (i = 0; i < SDL_arraysize(rects); i++)
     {
-        const float w = (float)(WINDOW_WIDTH / SDL_arraysize(rects));
+        const float w = (float)(window_width / SDL_arraysize(rects));
         const float h = i * 8.0f;
         rects[i].x = i * w;
-        rects[i].y = WINDOW_HEIGHT - h;
+        rects[i].y = window_height - h;
         rects[i].w = w;
         rects[i].h = h;
     }
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE); /* white, full alpha */
     SDL_RenderFillRects(renderer, rects, SDL_arraysize(rects));
+
+    SDL_FRect rounded_rect = {
+        .x = 30.0f,
+        .y = 30.0f,
+        .w = window_width - 60.0f,
+        .h = window_height - 60.0f};
+    SDL_SetRenderDrawColor(renderer, 128, 128, 128, SDL_ALPHA_OPAQUE); // gray color
+    SDL_RenderRect(renderer, &rounded_rect, 15.0f);                    // 15.0f is the corner radius
 
     SDL_RenderPresent(renderer); /* put it all on the screen! */
 
